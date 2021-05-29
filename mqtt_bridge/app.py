@@ -1,6 +1,7 @@
 import inject
 import paho.mqtt.client as mqtt
-import rospy
+import rclpy
+import sys
 
 from .bridge import create_bridge
 from .mqtt_client import create_private_path_extractor
@@ -23,10 +24,12 @@ def create_config(mqtt_client, serializer, deserializer, mqtt_private_path):
 
 def mqtt_bridge_node():
     # init node
-    rospy.init_node('mqtt_bridge_node')
+    rclpy.init(args=sys.argv)
+    node = rclpy.create_node('mqtt_bridge')
 
     # load parameters
-    params = rospy.get_param("~", {})
+    #params = rospy.get_param("~", {})
+    params = node.declare_parameter('mqtt', {}).value
     mqtt_params = params.pop("mqtt", {})
     conn_params = mqtt_params.pop("connection")
     mqtt_private_path = mqtt_params.pop("private_path", "")
@@ -61,17 +64,19 @@ def mqtt_bridge_node():
     mqtt_client.loop_start()
 
     # register shutdown callback and spin
-    rospy.on_shutdown(mqtt_client.disconnect)
-    rospy.on_shutdown(mqtt_client.loop_stop)
-    rospy.spin()
+    context = rclpy.context.Context()
+    context.on_shutdown(mqtt_client.disconnect)
+    context.on_shutdown(mqtt_client.loop_stop)
+    node.context = context
+    rclpy.spin(node)
 
 
 def _on_connect(client, userdata, flags, response_code):
-    rospy.loginfo('MQTT connected')
+    node.loginfo('MQTT connected')
 
 
 def _on_disconnect(client, userdata, response_code):
-    rospy.loginfo('MQTT disconnected')
+    node.loginfo('MQTT disconnected')
 
 
 __all__ = ['mqtt_bridge_node']

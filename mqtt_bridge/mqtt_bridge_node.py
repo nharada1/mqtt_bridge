@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import rospy
+import rclpy
 
 from mqtt_bridge.app import mqtt_bridge_node
 
-
-try:
+def main():
     mqtt_bridge_node()
-except rospy.ROSInterruptException:
-    pass
+
+if __name__ == "__main__":
+    main()
